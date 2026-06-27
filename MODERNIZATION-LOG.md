@@ -86,16 +86,29 @@ build + the IDE still serves) plus targeted functional smokes.
   and a never-firing `'end'`→`'close'` handler. The bump forces `engine.io`/`engine.io-client` to keep their
   **own nested ws@1.0.1**, so the live websocket transport is byte-unchanged (verified).
 
-## Known gaps / next
-- **less 2→4 — DEFERRED (intentional):** no CVE, and the skin 500 only reproduces for an *invalid*
-  skin color (a missing `default-<color>.less`), never for the 7 shipped skins. less@4's only real
-  output delta is jett-dark emitting `hsl()` vs hex — a visual change that can't be verified headless.
-  Build.js `render()` rewrite is specced and ready if ever wanted (apply atomically with the dep bump).
-  Do NOT "fix" `chat.css` — its lazy theme-var resolution is correct.
-- **node_modules supply-chain restructure** (so `npm ci`/`npm audit` run in a clean container) — the
-  highest-leverage next move for CVE visibility. Architectural; do as its own careful step.
-- **Tier 3 (risky, dedicated efforts):** connect 2→express 4, uglify-js 2→terser, acorn 2→8,
-  `crypto.createCipher`→`createCipheriv`, and the **deferred/quarantined** engine.io/ws/smith transport. send (`.root()`→options), async 0.9→3, optimist→yargs, ejs 1→3,
+### npm audit enabled + CVE sweep ✅ (36 → 23 vulnerabilities)
+- A committed `package-lock.json` makes `npm audit` work (`npm install --package-lock-only --omit=dev`
+  generates it without touching the committed node_modules). Run: `npm audit --omit=dev`.
+- **less 2 → 4** (reversing the earlier "defer" — the audit showed it's NOT cosmetic): less@2 pulled
+  `request@2.81.0` as an optional dep, dragging in a **critical SSRF + ~10 transitive CVEs**
+  (form-data critical, boom, hawk, hoek, cryptiles, sntp, har-validator, tough-cookie, uuid). less@4
+  drops all of it. Applied the validated `build.js` rewrite (`less.render()` with `math:'always'` +
+  `javascriptEnabled:true`). Verified: shipped skins (`dark.css`, `flat-light.css`) compile to 200.
+- **tmp 0.2.4 → ^0.2.7** — the Tier-1 bump to 0.2.4 wasn't enough; the path-traversal fix landed in 0.2.6.
+- **connect 2.12 → 2.30.2 REVERTED** — npm's "fixAvailable" suggestion is a net loss (23 → **37**);
+  newer connect 2.x bundles *more* vulnerable transitives. The real fix is connect→express (Tier 3).
+- **Result: 36 → 23** (criticals 4 → 2). The 2 remaining criticals (`engine.io-client`,
+  `xmlhttprequest-ssl`) and most of the 23 are **gated behind the deferred Tier-3 migrations** —
+  nothing else is safely fixable without a breaking change.
+
+## Known gaps / next — the remaining 23 CVEs, by gate
+- **~10 → connect→express 4 (Tier 3):** connect XSS + its bundled mime/qs/send/cookie/accepts/negotiator/fresh/ms.
+- **~8 → engine.io/ws transport migration (DEFERRED, quarantined):** engine.io, engine.io-client,
+  xmlhttprequest-ssl, ws, parsejson, parseuri, debug(transitive). The VFS lifeline — bump in lockstep or not at all.
+- **uglify-js 2 → terser (Tier 3):** serialize-javascript RCE.
+- **tern (git dep, Tier 3):** no upstream; replace with an LSP path eventually.
+- **deep transitive / test-only:** glob, minimatch, multiparty, ajv, mocha — clear as their parents move.
+- **Optional later:** full `file:`-deps restructure so `npm ci` (not just `npm install`) works in CI. send (`.root()`→options), async 0.9→3, optimist→yargs, ejs 1→3,
   mocha/chai, root `ws`→8 (the netproxy helper only), less 2→4 (fixes the skin 500), and the
   git-dep / committed-`node_modules` supply-chain restructure so `npm ci`/`npm audit` work.
 - **Tier 3 (risky, dedicated efforts):** connect 2→express 4, uglify-js 2→terser,
