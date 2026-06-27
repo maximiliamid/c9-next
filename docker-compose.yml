@@ -25,6 +25,8 @@ services:
     image: caddy:2
     container_name: c9-caddy
     depends_on: [c9]
+    environment:
+      - C9_HOST=${C9_HOST:-localhost}   # the self-signed cert is issued for this host/IP
     ports:
       - "${C9_HTTPS_PORT:-8443}:8443"   # the ONLY public port
     volumes:
