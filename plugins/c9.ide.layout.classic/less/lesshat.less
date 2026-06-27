@@ -1,0 +1,23 @@
+//  LESS Hat 1.1.2
+//  LESSHat.com
+//  From creators of CSSHat.com
+//  2012
+//  Petr Brzek & Jan Kuca
+
+
+.image-2x(@image; @width; @height; @repeat: no-repeat; @important: false) {
+    @filename  : ~`/(.*)\.(jpg|jpeg|png|gif)|$/.exec(@{image})[1] || ""`;
+    @extension : ~`/(.*)\.(jpg|jpeg|png|gif)|$/.exec(@{image})[2] || ""`;
+    background-repeat: @repeat;
+    background-image: ~`(function(){ return "url(@{filename}@1x.@{extension})" + ("@{important}" == "true" ? ' !important' : '');})()`;
+    background-size: ~`(function(){ return "@{width} @{height}" + ("@{important}" == "true" ? ' !important' : '');})()`;
+}
+.display(@state){
+    .display(@state) when (@state = true) {
+        display: block;
+    }
+    .display(@state) when (@state = false) {
+        display: none;
+    }
+    .display(@state);
+}

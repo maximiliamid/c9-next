@@ -1,0 +1,12 @@
+.has_apf .console .btnsesssioncontainer .inside {
+    padding-right : 64px;
+    padding-left : 2px;
+}
+
+.console .btnsesssioncontainer .tabmenubtn {
+    display : none;
+}
+
+.console .console_close_btn {
+    .image-2x("@{icon-path}/@{button-console-close}", 22px, 66px);
+}

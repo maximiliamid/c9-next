@@ -1,0 +1,18 @@
+# One-command Cloud9 on any Linux/Mac with Docker:
+#   docker compose up -d   →   http://localhost:8181/ide.html
+#
+# SECURITY: the default port binding is 127.0.0.1 only (see ports below). This IDE gives a
+# terminal + filesystem access, so do NOT change it to 0.0.0.0 / a public port without putting
+# real auth + TLS in front. See INSTALL.md.
+services:
+  c9:
+    build: .
+    image: c9:latest
+    container_name: c9
+    # host:container — bound to localhost on the host so it isn't exposed on your network.
+    ports:
+      - "127.0.0.1:8181:8181"
+    volumes:
+      # Your code lives here on the host and persists across container restarts.
+      - ./workspace:/workspace
+    restart: unless-stopped

@@ -1,0 +1,8 @@
+# Exclude only the ROOT installed node_modules (host/mac binaries). Vendored modules under
+# node_modules/* are restored from git inside the image; plugins/node_modules (committed,
+# pure-JS) IS copied. .git is kept on purpose — the vendored-module restore needs it.
+/node_modules
+**/.DS_Store
+/build/standalone
+/tmp
+npm-debug.log

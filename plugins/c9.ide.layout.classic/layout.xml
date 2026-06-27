@@ -1,0 +1,31 @@
+<a:application xmlns:a="http://ajax.org/2005/aml">
+    <a:vsplitbox id="root" anchors="0 0 0 0">
+        <a:bar id="barQuestion" height="0" visible="false">
+        </a:bar>
+        
+        <a:vsplitbox id="vbMain">
+            <a:bar skin="c9-menu-bar" id="logobar" height="31"> <!-- 40 -->
+                <a:bar class="fakehbox aligncenter padding3 bartools" id="barTools" height="25" style="padding-top:1px">
+                    <a:divider skin="c9-divider-double" class="menudivider" />
+                </a:bar>
+                <a:bar style="float:right;margin-right:-11px;" class="fakehbox aligncenter" id="barExtras">
+                    
+                </a:bar>
+            </a:bar>
+    
+            <a:hsplitbox id="hboxMain" splitter="true">
+                <a:bar id="colLeft" width="1" visible="false" />
+                <a:hsplitbox splitter="true">
+                    <a:vsplitbox id="consoleRow" splitter="true" class="colMain">
+                        <a:vsplitbox id="searchRow">
+                            <a:hsplitbox>
+                                <a:vsplitbox id="colMiddle" padding="3" />
+                            </a:hsplitbox>
+                        </a:vsplitbox>
+                    </a:vsplitbox>
+                    <a:bar id="colRight" width="1" zindex="100" visible="false" />
+                </a:hsplitbox>
+            </a:hsplitbox>
+        </a:vsplitbox>
+    </a:vsplitbox>
+</a:application>
