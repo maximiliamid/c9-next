@@ -148,6 +148,8 @@ Vfs.prototype._createEngine = function(vfs, options) {
         pingInterval: 25000,
         transports: ["polling", "websocket"],
         allowUpgrades: true,
+        allowEIO3: true,
+        maxHttpBufferSize: 1e8,
         cookie: false
     });
     

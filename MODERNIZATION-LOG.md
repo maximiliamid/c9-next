@@ -122,7 +122,24 @@ build + the IDE still serves) plus targeted functional smokes.
 Cleared the connect cluster (connect XSS, qs, mime, send, cookie, cookie-signature, fresh, multiparty).
 Remaining 15 are gated as below; the 2 criticals (engine.io-client, xmlhttprequest-ssl) are the transport.
 
-## Known gaps / next — the remaining 15 CVEs, by gate
+### engine.io 1.6.9 → 6.x transport migration ✅ (Tier 3 — the VFS lifeline; clears BOTH remaining criticals)
+The deferred/quarantined one — done with a headless end-to-end gate. Only **3 runtime edits** (kaefer/smith needed NO code change):
+- `package.json`: `engine.io` + `engine.io-client` → `^6` (lockstep — EIO3 server + EIO4 client, or a stale bundle, = silent kaefer reconnect loop).
+- `vfs.js`: added `allowEIO3: true` (staged compat so cached EIO3 clients keep working — makes the bump **non-destructive**) and `maxHttpBufferSize: 1e8` (v6 silently dropped the default from ~95MB to 1MB — would have silently killed large file ops).
+- `statics.js`: `engine.io-client/engine.io.js` → `.../dist/engine.io.js` (v6 moved the served UMD bundle; the old path throws `ERR_PACKAGE_PATH_NOT_EXPORTED` and the /engine.io mount never registers).
+- A wrong edit (`new eio.Socket()` in vfs_client.js) was **empirically refuted** by the analysis (the served UMD export is the callable `eio(opts)` with no `.Socket`) — so it is NOT in the change set.
+- **Bonus modern-Node fix** in `vfs-socket` (`consumer.js` + `worker.js`): `stream.hasOwnProperty("readable")` → `"readable" in stream` — on modern Node `readable`/`writable` are prototype getters, so the old check never propagated the flag and broke stream proxying with native Node streams.
+- **Headless E2E** (`scripts/vfs-headless-test.js`): broker REST → engine.io@6 handshake → kaefer → smith → vfs-socket → **real fs mkfile/readfile/stat + process spawn**, **PASS on BOTH polling and websocket**. Run: `docker cp` it in, then `docker exec ... node scripts/vfs-headless-test.js`.
+- **Residual (browser-only):** the live `/ide.html` mini_require AMD load of the served bundle. Keep `allowEIO3:true` until a browser smoke confirms connect + open/save a file + run a terminal command, then it may be flipped to `false`.
+
+### Audit progress: 36 → 23 → 15 → **5** vulnerabilities · **0 critical**
+The transport cluster cleared both criticals (engine.io-client, xmlhttprequest-ssl). The irreducible remaining 5 are test-only / git-dep:
+
+## Known gaps / next — the remaining 5 CVEs (irreducible tail)
+- **mocha + serialize-javascript** — test-only (moderate), no runtime exposure.
+- **glob + minimatch** — deep transitive of old test/build deps.
+- **tern** — the git-sourced JS-intelligence fork; no upstream fix (its real modernization is an LSP re-architecture).
+- Earlier known gaps (cosmetic skin scope, full `file:`-deps `npm ci` restructure) remain optional.
 - **~10 → connect→express 4 (Tier 3):** connect XSS + its bundled mime/qs/send/cookie/accepts/negotiator/fresh/ms.
 - **~8 → engine.io/ws transport migration (DEFERRED, quarantined):** engine.io, engine.io-client,
   xmlhttprequest-ssl, ws, parsejson, parseuri, debug(transitive). The VFS lifeline — bump in lockstep or not at all.

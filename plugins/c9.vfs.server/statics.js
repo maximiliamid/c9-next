@@ -26,7 +26,7 @@ function main(options, imports, register) {
         loaded = true;
         
         // TODO: big hack. Patch engine.io client to disable 'withCredentials"
-        var eioClient = require.resolve("engine.io-client/engine.io.js");
+        var eioClient = require.resolve("engine.io-client/dist/engine.io.js");
         try {
             fs.writeFileSync(eioClient, fs.readFileSync(eioClient, "utf8").replace("xhr.withCredentials = true;", "xhr.__withCredentials = true;"));
         } catch (e) {
