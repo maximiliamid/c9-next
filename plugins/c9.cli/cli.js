@@ -42,7 +42,7 @@ define(function(require, exports, module) {
                 }
             }
             
-            var optimist = require('optimist');
+            var optimist = require('yargs/yargs')(process.argv.slice(2));
             
             var def = commands[module];
             
@@ -86,7 +86,7 @@ define(function(require, exports, module) {
             if (argv.argv.help)
                 return argv.showHelp();
             if (def.check) 
-                argv = argv.check(def.check);
+                argv = argv.check(function(a) { def.check(a); return true; });
             argv = argv.argv;
 
             cmd.exec(module, argv);

@@ -231,12 +231,12 @@ function plugin(options, imports, register) {
             result.all = result.list.concat(result.blacklist);
             async.filterSeries(result.list, function(path, next) {
                 fs.readFile(base + path, "utf8", function(err, file) {
-                    if (err) return next(false);
+                    if (err) return next(null, false);
                     if (file.match(/^"use server"/m) && !file.match(/^"use client"/m))
-                        return next(false);
-                    next(file.match(/^define\(|^require\(\[/m) || /c9\.(ide|fs)/.test(path));
+                        return next(null, false);
+                    next(null, file.match(/^define\(|^require\(\[/m) || /c9\.(ide|fs)/.test(path));
                 });
-            }, function(files) {
+            }, function(err, files) {
                 result.list = files;
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify(result, null, 2));

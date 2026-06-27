@@ -66,7 +66,7 @@ function tryConnect(retries, callback) {
         
         debugClient = ws;
     
-        debugClient.on('message', function(data) {
+        debugClient.on('message', function(data, isBinary) {
             if (browserClient) {
                 browserClient.write(data);
             } else {
@@ -79,7 +79,7 @@ function tryConnect(retries, callback) {
             debugClient = null;
         });
         
-        debugClient.on("end", function(data) {
+        debugClient.on("close", function() {
             debugClient = null;
         });
         

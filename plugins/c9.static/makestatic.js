@@ -37,7 +37,7 @@ function plugin(options, imports, register) {
             function(next) {
                 if (options.virtual)
                     return execFile("mkdir", ["-p", dest], next);
-                async.forEachSeries(mounts, function(mount, next) {
+                async.eachSeries(mounts, function(mount, next) {
                     var target = join(dest, mount.mount);
                     console.log(copy ? "copy" : "link", mount.path + "/* to", target);
                     if (target[0] !== "/")

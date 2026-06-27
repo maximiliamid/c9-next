@@ -144,14 +144,14 @@ define(function(require, exports, module) {
                     
                     if (result.sources) {
                         pending++;
-                        async.forEach(result.sources, function(pkg, next) {
+                        async.each(result.sources, function(pkg, next) {
                             var deps = moduleDeps.getSubmodules(pkg.source, pkg.id);
                             if (pkg.submodules)
                                 deps = deps.concat(pkg.submodules);
                             if (!deps.length)
                                 return next();
                             
-                            async.forEach(deps, function(moduleName, next) {
+                            async.each(deps, function(moduleName, next) {
                                 console.log(moduleName, pkg.id);
                                 build.buildModule(moduleName, pathConfig, save(["modules", moduleName + ".js"], next));
                             }, next);

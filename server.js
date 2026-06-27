@@ -71,7 +71,7 @@ module.exports.getDefaultSettings = getDefaultSettings;
 
 function main(argv, config, onLoaded) {
     var inContainer = os.hostname().match(/^\w+-\w+-\d+$/);
-    var optimist = require("optimist");
+    var optimist = require("yargs/yargs");
     var async = require("async");
 
     var options = optimist(argv)
@@ -86,7 +86,9 @@ function main(argv, config, onLoaded) {
         .describe("helpWithSudo", "Ask for sudo password on startup")
         .default("domains", inContainer && [process.env.C9_HOSTNAME || process.env.C9_DOMAINS, "c9.io"])
         .boolean("help")
-        .describe("help", "Show command line options.");
+        .describe("help", "Show command line options.")
+        .help(false)
+        .version(false);
 
     var configs = options.argv._;
     if (!configs.length) 

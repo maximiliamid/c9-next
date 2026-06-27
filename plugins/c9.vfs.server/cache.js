@@ -52,7 +52,7 @@ define(function(require, exports, module) {
                 vfs.pid = pid;
                 entry.vfs = vfs;
                 
-                async.forEach(vfsExtensions, function(factory, next) {
+                async.each(vfsExtensions, function(factory, next) {
                     factory(vfs, next);
                 }, function(err) {
                     if (err) return done(err);

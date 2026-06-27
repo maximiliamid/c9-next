@@ -64,10 +64,38 @@ build + the IDE still serves) plus targeted functional smokes.
   renders. (Note: editing the vendored `render-ejs.js` requires committing it so the Dockerfile's
   git-restore of `node_modules/connect-architect` keeps the change.)
 
+### async 0.9 → 3.2.6 ✅ (clears CVE-2021-43138 prototype pollution)
+- async@3 keeps the `forEach`/`forEachSeries` aliases, so the only **real** breakage was
+  `async.filterSeries` in `c9.vfs.standalone/standalone.js`: its callback signature changed
+  `cb(bool)` → `cb(err, bool)`. Unfixed, `/test/all.json` returned `["define("]` instead of the
+  file list. Fixed; verified `/test/all.json` is a real 139-item array. `forEach`→`each` canonicalized
+  at 5 sites (cosmetic/future-proof). The browser shim `c9.nodeapi/async.js` left untouched.
+
+### optimist → yargs@17 ✅ (drops minimist@0.0.10 / CVE-2020-7598)
+- `require("optimist")` → `require("yargs/yargs")` factory (server.js, scripts, cli.js). **Boot trap
+  handled:** yargs `process.exit()`s on `--help`/`--version` during `.argv` → added `.help(false).version(false)`
+  in server.js to keep the manual help path. cli.js `.check(fn)` wrapped to `return true` (yargs treats
+  a falsy return as failure). Verified: boots via yargs argv, `optimist` + `minimist@0.0.10` removed, `bin/c9 --help` works.
+
+### mocha 1.8 → 10.8 + chai 1.5 → 4.5 ✅ (EOL test deps)
+- package.json-only; kept in `dependencies` (served raw to the in-IDE test runner at `/static/lib/{mocha,chai}`).
+  chai stays at 4 (chai 5 is ESM-only, breaks require/AMD). Verified both serve 200.
+
+### root ws 1.0.1 → 8 ✅
+- Only consumed by the (dead-code) `netproxy-ws.js` debug helper; migrated its `message (data,flags)`→`(data,isBinary)`
+  and a never-firing `'end'`→`'close'` handler. The bump forces `engine.io`/`engine.io-client` to keep their
+  **own nested ws@1.0.1**, so the live websocket transport is byte-unchanged (verified).
+
 ## Known gaps / next
-- **Tier 2 (remaining):** async 0.9→3, optimist→yargs, mocha/chai, root `ws`→8 (netproxy helper),
-  less 2→4 + the skin scope fix (cosmetic — `chat.css` theme vars), and the
-  git-dep / committed-`node_modules` supply-chain restructure so `npm ci`/`npm audit` work. send (`.root()`→options), async 0.9→3, optimist→yargs, ejs 1→3,
+- **less 2→4 — DEFERRED (intentional):** no CVE, and the skin 500 only reproduces for an *invalid*
+  skin color (a missing `default-<color>.less`), never for the 7 shipped skins. less@4's only real
+  output delta is jett-dark emitting `hsl()` vs hex — a visual change that can't be verified headless.
+  Build.js `render()` rewrite is specced and ready if ever wanted (apply atomically with the dep bump).
+  Do NOT "fix" `chat.css` — its lazy theme-var resolution is correct.
+- **node_modules supply-chain restructure** (so `npm ci`/`npm audit` run in a clean container) — the
+  highest-leverage next move for CVE visibility. Architectural; do as its own careful step.
+- **Tier 3 (risky, dedicated efforts):** connect 2→express 4, uglify-js 2→terser, acorn 2→8,
+  `crypto.createCipher`→`createCipheriv`, and the **deferred/quarantined** engine.io/ws/smith transport. send (`.root()`→options), async 0.9→3, optimist→yargs, ejs 1→3,
   mocha/chai, root `ws`→8 (the netproxy helper only), less 2→4 (fixes the skin 500), and the
   git-dep / committed-`node_modules` supply-chain restructure so `npm ci`/`npm audit` work.
 - **Tier 3 (risky, dedicated efforts):** connect 2→express 4, uglify-js 2→terser,
