@@ -101,7 +101,28 @@ build + the IDE still serves) plus targeted functional smokes.
   `xmlhttprequest-ssl`) and most of the 23 are **gated behind the deferred Tier-3 migrations** —
   nothing else is safely fixable without a breaking change.
 
-## Known gaps / next — the remaining 23 CVEs, by gate
+### connect 2.12 → connect 3.7 + extracted middleware ✅ (Tier 3 — clears the connect CVE cluster)
+- connect@3 removed all bundled middleware + `connect/lib/utils`. Migrated via a **getModule()
+  compatibility shim** in `connect-plugin.js` so **zero consumer files changed**: `getModule()`
+  returns an enriched `connectModule` mapping the legacy names to the extracted packages —
+  `createServer`→connect, `static`→serve-static, `compress`→compression, `favicon`→serve-favicon,
+  `basicAuth`→a **constant-time** (basic-auth + `crypto.timingSafeEqual`) inline middleware, plus
+  cookieParser/urlencoded/json/query insurance for the unwired group-C plugins.
+- Provider lines 87-89: `connect.cookieParser/urlencoded/json` → cookie-parser + body-parser
+  (`extended:true`, `limit:1mb` to match connect 2.12 semantics). New `connect-utils-shim.js`
+  replaces the removed `connect/lib/utils`. Live static path = **serve-static (traversal-safe)** via the shim.
+- deps: `connect ^3.7.0` + cookie-parser/body-parser/compression/serve-static/serve-favicon/basic-auth.
+- **Vendored-toplevel** edits (connect-plugin.js, the new shim, middleware/static.js) were committed
+  *before* the Docker build (the Dockerfile git-restores `node_modules/connect-architect`).
+- **Verified in Docker:** 401 + `WWW-Authenticate` challenge; 200 with creds; **wrong creds → 401, no
+  crash** (constant-time); static serves 200, **`../` + encoded traversal both blocked (404)**;
+  "Cloud9 is up and running"; connect@3.7.0 single copy.
+
+### Audit progress: 36 → 23 → **15** vulnerabilities
+Cleared the connect cluster (connect XSS, qs, mime, send, cookie, cookie-signature, fresh, multiparty).
+Remaining 15 are gated as below; the 2 criticals (engine.io-client, xmlhttprequest-ssl) are the transport.
+
+## Known gaps / next — the remaining 15 CVEs, by gate
 - **~10 → connect→express 4 (Tier 3):** connect XSS + its bundled mime/qs/send/cookie/accepts/negotiator/fresh/ms.
 - **~8 → engine.io/ws transport migration (DEFERRED, quarantined):** engine.io, engine.io-client,
   xmlhttprequest-ssl, ws, parsejson, parseuri, debug(transitive). The VFS lifeline — bump in lockstep or not at all.
