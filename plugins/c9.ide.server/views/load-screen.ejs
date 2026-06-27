@@ -18,11 +18,11 @@
     var isDark = theme.indexOf("dark") > -1;
     if (!html) {
         var isFlat = theme.indexOf("flat") > -1;
-        %><% include flat-load-screen.html %><%
+        %><%- include('flat-load-screen.html', { theme: theme, isDark: isDark, standalone: standalone, staticPrefix: staticPrefix }) %><%
     }
     else {
-        %><div id="loadingide" class="<%-: theme + (isDark ? " dark" : "") %>">
-            <%-: html %>
+        %><div id="loadingide" class="<%- theme + (isDark ? " dark" : "") %>">
+            <%- html %>
         </div><%
     }
 %>

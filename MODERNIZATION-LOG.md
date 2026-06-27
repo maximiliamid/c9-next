@@ -46,8 +46,28 @@ build + the IDE still serves) plus targeted functional smokes.
   warning is gone, and `pty.spawn("bash", …)` runs a command and returns its output. tmux 3.3a
   present (c9 wraps it). Final browser check: open a Terminal pane in the IDE and type a command.
 
+## Tier 2 — IN PROGRESS
+
+### send 0.1.4 → 0.19.0 ✅ (clears the 0.1.x directory-traversal CVE)
+- The chained `.root(dir)` builder was removed; moved to the options object `send(req, path, {root})`
+  at `c9.static/cdn.js` (×2) and `architect-build/transform.js`. Verified `/static` still serves.
+
+### ejs 1.0 → 3.1 ✅ (clears the ejs template-injection CVE class)
+- `ejs.filters` removed → `JSONToJS` is now passed to templates as a local function
+  (`connect-architect/.../render-ejs.js`); templates use `<%- JSONToJS(x) %>` not `<%-: x | JSONToJS %>`.
+- `<% include x %>` → `<%- include('x') %>`; `<%-:` filter-mode → `<%-` across `standalone.html.ejs`,
+  `load-screen.ejs`, `flat-load-screen.html`.
+- **Gotcha fixed:** ejs@1's textual include shared lexical scope; ejs@3's `include()` only gets the
+  passed data. So `theme`/`isDark`/`staticPrefix` had to be passed explicitly into the nested
+  includes (with a `/static` fallback for `staticPrefix`, which the render data never supplied).
+- Verified: `/ide.html` 200, the `var plugins = [...]` array renders, the load-screen include chain
+  renders. (Note: editing the vendored `render-ejs.js` requires committing it so the Dockerfile's
+  git-restore of `node_modules/connect-architect` keeps the change.)
+
 ## Known gaps / next
-- **Tier 2 (staged):** send (`.root()`→options), async 0.9→3, optimist→yargs, ejs 1→3,
+- **Tier 2 (remaining):** async 0.9→3, optimist→yargs, mocha/chai, root `ws`→8 (netproxy helper),
+  less 2→4 + the skin scope fix (cosmetic — `chat.css` theme vars), and the
+  git-dep / committed-`node_modules` supply-chain restructure so `npm ci`/`npm audit` work. send (`.root()`→options), async 0.9→3, optimist→yargs, ejs 1→3,
   mocha/chai, root `ws`→8 (the netproxy helper only), less 2→4 (fixes the skin 500), and the
   git-dep / committed-`node_modules` supply-chain restructure so `npm ci`/`npm audit` work.
 - **Tier 3 (risky, dedicated efforts):** connect 2→express 4, uglify-js 2→terser,
