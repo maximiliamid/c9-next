@@ -8,12 +8,15 @@
 # present so node-pty / the pty path work.
 FROM node:24-bookworm-slim
 
-# git           — needed for the vendored-module restore AND the 4 git+https deps (emmet/nak/tern)
-# tmux          — c9's terminal backend
-# python3/make/g++ — toolchain for any native module builds (node-pty)
-# ripgrep       — fast file search (modern replacement path)
+# Build/runtime essentials: git (vendored restore + git deps), tmux (terminal backend),
+# python3/make/g++ (node-pty native build), ripgrep (fast search).
+# Plus a general dev + netsec toolset so the in-IDE terminal is actually usable
+# (python/php/nmap/curl/... ). Add more here as you need them — it's just apt.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      git tmux python3 make g++ ca-certificates ripgrep \
+      git tmux make g++ ca-certificates ripgrep \
+      python3 python3-pip python-is-python3 php-cli \
+      curl wget vim nano less jq unzip zip tree htop procps \
+      net-tools dnsutils iputils-ping nmap sudo openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/c9
