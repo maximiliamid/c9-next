@@ -1,0 +1,19 @@
+# Caddy TLS reverse proxy in front of Cloud9.
+# HTTPS on :8443 using Caddy's INTERNAL (self-signed) CA — no domain and no port 80 needed
+# (handy when 80/443 are already taken by other services on the host).
+#
+# The browser will warn "not private / not trusted" because the cert is self-signed —
+# click "proceed" for testing. Traffic is still encrypted (TLS), unlike plain HTTP.
+#
+# To use a REAL trusted cert later: point a domain at this host, free up port 80, and replace
+# the `:8443` block with:
+#     your.domain.com {
+#         reverse_proxy c9:8181
+#     }
+# Caddy then auto-issues + renews a Let's Encrypt cert. Nothing else changes.
+
+:8443 {
+	tls internal
+	encode gzip zstd
+	reverse_proxy c9:8181
+}

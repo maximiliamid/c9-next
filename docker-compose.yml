@@ -1,18 +1,42 @@
-# One-command Cloud9 on any Linux/Mac with Docker:
-#   docker compose up -d   →   http://localhost:8181/ide.html
+# Cloud9 (modernized) behind a Caddy TLS reverse proxy — one command:
+#   cp .env.example .env        # then set a STRONG C9_PASSWORD
+#   docker compose up -d --build
+#   open https://<host>:8443/ide.html   (login with C9_USERNAME / C9_PASSWORD)
 #
-# SECURITY: the default port binding is 127.0.0.1 only (see ports below). This IDE gives a
-# terminal + filesystem access, so do NOT change it to 0.0.0.0 / a public port without putting
-# real auth + TLS in front. See INSTALL.md.
+# Only Caddy (HTTPS) is published; c9 is internal-only (not on the public network).
+# c9 is remote-code-execution by design, so this keeps it behind TLS + basic auth and off
+# the plaintext surface. 80/443 are left free for any other services on the host.
 services:
   c9:
     build: .
-    image: c9:latest
-    container_name: c9
-    # host:container — bound to localhost on the host so it isn't exposed on your network.
-    ports:
-      - "127.0.0.1:8181:8181"
+    image: c9-next:latest
+    container_name: c9-next
+    environment:
+      - C9_USERNAME=${C9_USERNAME:-cloud9}
+      - C9_PASSWORD=${C9_PASSWORD:?set C9_PASSWORD in .env (copy .env.example first)}
+    expose:
+      - "8181"                          # internal only — reached by caddy over c9net
     volumes:
-      # Your code lives here on the host and persists across container restarts.
-      - ./workspace:/workspace
+      - ${C9_WORKSPACE:-./workspace}:/workspace
     restart: unless-stopped
+    networks: [c9net]
+
+  caddy:
+    image: caddy:2
+    container_name: c9-caddy
+    depends_on: [c9]
+    ports:
+      - "${C9_HTTPS_PORT:-8443}:8443"   # the ONLY public port
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - c9_caddy_data:/data
+      - c9_caddy_config:/config
+    restart: unless-stopped
+    networks: [c9net]
+
+volumes:
+  c9_caddy_data:
+  c9_caddy_config:
+
+networks:
+  c9net:

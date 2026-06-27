@@ -1,3 +1,5 @@
+/.env
+/workspace/
 build/*/
 build/*.zip
 build/*.exe

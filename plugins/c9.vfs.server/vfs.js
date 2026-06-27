@@ -148,7 +148,7 @@ Vfs.prototype._createEngine = function(vfs, options) {
         pingInterval: 25000,
         transports: ["polling", "websocket"],
         allowUpgrades: true,
-        allowEIO3: true,
+        allowEIO3: false, // browser confirmed on engine.io-client@6 (EIO4); drop the legacy EIO3 parser path
         maxHttpBufferSize: 1e8,
         cookie: false
     });

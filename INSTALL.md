@@ -10,31 +10,34 @@ terminal) or **bare-metal**.
 
 ---
 
-## Option A — Docker (recommended)
+## Option A — Docker + TLS (recommended)
 
-Works on any Linux (or macOS/Windows) with Docker. The Linux container ships `tmux` + build
-tools, so the terminal works out of the box.
+One command. The Linux container ships `tmux` + build tools (terminal works out of the box),
+and `docker compose` puts a **Caddy HTTPS reverse proxy** in front so c9 is never exposed on the
+plaintext surface (c9 is RCE-by-design — keep it behind TLS + auth).
 
 ```bash
-# from the repo root
-docker compose up -d
-# → open http://localhost:8181/ide.html
+cp .env.example .env        # then set a STRONG C9_PASSWORD (and pick C9_HTTPS_PORT)
+docker compose up -d --build
+# → open https://<host>:8443/ide.html   (login with C9_USERNAME / C9_PASSWORD)
 ```
 
-Or without compose:
+- Only Caddy's HTTPS port (default **8443**) is published; **c9 itself is internal-only**.
+- TLS uses Caddy's **self-signed** CA by default (no domain / no port 80 needed) → the browser
+  warns "not trusted"; click through. Traffic is still encrypted.
+- **Real trusted cert later:** point a domain at the host, free port 80, and replace the `:8443`
+  block in `Caddyfile` with `your.domain { reverse_proxy c9:8181 }` — Caddy auto-issues Let's Encrypt.
+- Manage: `docker compose logs -f` · `docker compose down` · `docker compose up -d --build` (update).
+
+### Plain HTTP (localhost dev only — no TLS)
 
 ```bash
 docker build -t c9 .
-mkdir -p workspace
-docker run -d --name c9 \
-  -p 127.0.0.1:8181:8181 \
-  -v "$PWD/workspace:/workspace" \
-  c9
-# → http://localhost:8181/ide.html
+docker run -d --name c9 -p 127.0.0.1:8181:8181 \
+  -e C9_USERNAME=cloud9 -e C9_PASSWORD=yourpass \
+  -v "$PWD/workspace:/workspace" c9
+# → http://localhost:8181/ide.html   (bound to localhost only)
 ```
-
-Your files live in `./workspace` on the host and persist across restarts.
-Manage it: `docker logs -f c9` · `docker stop c9` · `docker rm -f c9`.
 
 ### Exposing it to a team (do this, not a raw public port)
 Put a TLS-terminating reverse proxy with auth in front (Caddy example):
