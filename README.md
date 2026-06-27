@@ -1,95 +1,93 @@
-Cloud9 3.0 SDK for Plugin Development
-======================================
+# Cloud9 — Modernized
 
-This is the core repository for the Cloud9 v3 SDK. The SDK allows you to run a version of Cloud9 that allows you to develop plugins and create a custom IDE based on Cloud9.
- 
-#### Project Status: *ALPHA*
+A browser-based IDE — code editor, file tree, integrated terminal, and run/debug — that runs as
+a single self-hosted service. This is a **continued-development fork** of the discontinued
+Cloud9 v3 core, brought up to date to run on **current Node.js (22–24)** and **modern Linux**,
+shipped as a **Docker image** you can stand up in one command.
 
-During the alpha stage, expect many things to break, not work or simply fail.
+> Status: **working** — boots and serves the full IDE on Node 24, with the editor and terminal
+> verified end-to-end. See [`MODERNIZATION-LOG.md`](./MODERNIZATION-LOG.md) for what's been
+> modernized and what's next.
 
-#### Creating Plugins ####
+---
 
-The best and easiest way to create plugins is on c9.io. Please check out this tutorial for how to [get started writing plugins.](http://cloud9-sdk.readme.io/v0.1/docs/getting-started-with-cloud9-plugins)
+## Quick start (Docker + TLS) — recommended
 
-We also have a tutorial for how to get started working on the core plugins. [Check out that tutorial here.](http://cloud9-sdk.readme.io/v0.1/docs/contributing-to-cloud9)
+One command, with an HTTPS reverse proxy in front:
 
-#### Documentation ####
+```bash
+cp .env.example .env          # set a strong C9_PASSWORD, and C9_HOST (your IP/domain)
+docker compose up -d --build
+# → open https://<C9_HOST>:8443/ide.html   (login with C9_USERNAME / C9_PASSWORD)
+```
 
-We have several documentation resources for you:
+- Only the HTTPS port (default **8443**) is published; the IDE itself stays internal.
+- TLS uses a self-signed cert by default (no domain needed) — the browser warns once, click through.
+- IP-only host? Set `C9_HOST=<your-ip>.nip.io` (free wildcard DNS) so the cert matches.
+- Real trusted cert: point a domain at the host + free port 80 → Caddy auto-issues Let's Encrypt.
 
-<table>
-    <tr><th>SDK documentation</th><td>http://cloud9-sdk.readme.io/v0.1/docs</td></tr>
-    <tr><th>API documentation</th><td>http://docs.c9.io/api</td></tr>
-    <tr><th>User documentation</th><td>http://docs.c9.io</td></tr>
-</table>
+### Plain HTTP (localhost dev only)
 
-Please join the mailinglist to get support or give support to the growing community of plugin developers:
-https://groups.google.com/forum/#!forum/cloud9-sdk
+```bash
+docker build -t cloud9 .
+docker run -d --name cloud9 -p 127.0.0.1:8181:8181 \
+  -e C9_USERNAME=dev -e C9_PASSWORD=yourpass \
+  -v "$PWD/workspace:/workspace" cloud9
+# → http://localhost:8181/ide.html
+```
 
-#### Installation ####
+### Bare metal (Ubuntu/Debian, no Docker)
 
-Follow these steps to install the SDK:
+```bash
+bash scripts/install-ubuntu.sh
+node server.js --port 8181 --listen 127.0.0.1 -w "$HOME/workspace"
+```
 
-    git clone https://github.com/c9/core.git c9sdk
-    cd c9sdk
-    scripts/install-sdk.sh
-    
-To update the SDK to the latest version run:
+Full instructions (systemd service, reverse proxy, requirements): [`INSTALL.md`](./INSTALL.md).
 
-    git pull origin master
-    scripts/install-sdk.sh
-    
-Please note that if you are using npm version >=3 and run npm install manually, you need to run `git checkout HEAD -- node_modules` to restore the files deleted by npm.
-Cloud9 is known to work with node versions 0.10 to 8, but Newer versions should work too.
+---
 
-#### Starting Cloud9 ####
+## What's inside
 
-Start the Cloud9 as follows:
+- **Editor** — Ace, with syntax highlighting, themes, multi-pane tabs.
+- **Terminal** — real shell via `node-pty` + `tmux` (baked into the image).
+- **Filesystem** — file tree, open/save, search (ripgrep), watch.
+- **Run / preview** — run code and preview output from the browser.
+- **Plugin architecture** — the IDE is composed of plugins via a dependency-injection runtime.
 
-    node server.js
+## Configuration
 
-The following options can be used:
+The server reads `--port`, `--listen`, `-w <workspace>`, `--auth user:pass`, `--secure <cert>`,
+`--collab`, and more — run `node server.js --help` for the full list. In Docker, set
+`C9_USERNAME` / `C9_PASSWORD` / `C9_HOST` / `C9_HTTPS_PORT` / `C9_WORKSPACE` via `.env`.
 
-    --settings       Settings file to use
-    --help           Show command line options.
-    -t               Start in test mode
-    -k               Kill tmux server in test mode
-    -b               Start the bridge server - to receive commands from the cli  [default: false]
-    -w               Workspace directory
-    --port           Port
-    --debug          Turn debugging on
-    --listen         IP address of the server
-    --readonly       Run in read only mode
-    --packed         Whether to use the packed version.
-    --auth           Basic Auth username:password
-    --collab         Whether to enable collab.
-    --no-cache       Don't use the cached version of CSS
+## ⚠️ Security
 
-Now visit [http://localhost:8181/ide.html](http://localhost:8181/ide.html) to load Cloud9.
+This IDE gives whoever can log in a **terminal and filesystem access** on the host/container —
+treat it as remote code execution by design. Always run it **behind authentication and TLS**
+(the Docker setup does both), keep it off the public plaintext surface, and prefer isolating each
+deployment (container/VM, non-root, scoped workspace). Don't expose it raw to the internet.
 
-#### Running Tests ####
+## Project layout
 
-Run server side tests with:
-    
-    npm run test
-    
-Run client side tests with:
+```
+server.js            entry point
+configs/             server + client plugin graphs (architect)
+plugins/             the IDE plugins (editor, terminal, fs, run, ...)
+scripts/             setup-modern.sh, start-modern.sh, install-ubuntu.sh, verify-docker.sh
+Dockerfile           modern Node 24 image (tmux + node-pty + ripgrep)
+docker-compose.yml   c9 (internal) + Caddy TLS reverse proxy
+```
 
-    npm run ctest
-    
-Then visit [http://localhost:8181/static/test](http://localhost:8181/static/test) in your browser.
+## Development
 
-#### Contributing ####
+```bash
+scripts/setup-modern.sh     # install deps + restore vendored modules (once)
+scripts/start-modern.sh     # run on 127.0.0.1:8181
+scripts/verify-docker.sh    # build the image and assert the IDE serves
+```
 
-We actively encourage and support contributions. We accept pull requests to the core as well as to any of the open source plugins and libraries that we maintain under the c9 organization on GitHub.
+## License
 
-Feel free to fork and improve/enhance the Cloud9 SDK and the open source plugins in any way you want. Then please open a pull request. For more information on our contributing guidelines, see our contributing guide: http://cloud9-sdk.readme.io/v0.1/docs/contributing-to-cloud9
-
-To protect the interests of the Cloud9 contributors and users we require contributors to sign a Contributors License Agreement (CLA) before we pull the changes into the main repository. Our CLA is the simplest of agreements, requiring that the contributions you make to an ajax.org project are only those you're allowed to make. This helps us significantly reduce future legal risk for everyone involved. It is easy, helps everyone, takes ten minutes, and only needs to be completed once. There are two versions of the agreement:
-
-1. [The Individual CLA](https://docs.google.com/a/c9.io/forms/d/1MfmfrxqD_PNlNsuK0lC2KSelRLxGLGfh_wEcG0ijVvo/viewform): use this version if you're working on the Cloud9 SDK or open source plugins in your spare time, or can clearly claim ownership of copyright in what you'll be submitting.
-2. [The Corporate CLA](https://docs.google.com/a/c9.io/forms/d/1vFejn4111GdnCNuQ6BfnJDaxdsUEMD4KCo1ayovAfu0/viewform): have your corporate lawyer review and submit this if your company is going to be contributing to the Cloud9 SDK and/or open source plugins.
-
-If you want to contribute to the Cloud9 SDK and/or open source plugins please go to the online form, fill it out and submit it.
-
-Happy coding, Cloud9
+Apache License 2.0 — see [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE). This project is a fork
+of the open-source Cloud9 v3 core and retains that license.
