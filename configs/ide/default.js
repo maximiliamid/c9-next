@@ -583,7 +583,9 @@ module.exports = function(options) {
         {
             packagePath: "plugins/c9.ide.installer/installer",
             homeDir: options.homeDir,
-            installSelfCheck: true,
+            // Docker image already ships tmux + node-pty, so skip the ~/.c9 legacy-deps
+            // installer prompt (it would try to fetch ancient node 0.12 / pty.js@0.3.0 binaries).
+            installSelfCheck: false,
             installPath: options.installPath
         },
         
