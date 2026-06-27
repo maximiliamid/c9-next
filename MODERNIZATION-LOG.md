@@ -37,9 +37,16 @@ build + the IDE still serves) plus targeted functional smokes.
   arg → `fs.open(path, flags, mode, cb)`. **Verified:** a write→read roundtrip through the VFS
   now succeeds and the file lands on the mounted volume.
 
+## Terminal — DONE ✅ (node-pty on Node 24)
+- `package.json` → added `node-pty@^1.1.0` (Microsoft's maintained successor; builds from source —
+  python3/make/g++ already in the image).
+- `vfs-local/localfs.js` → added `node-pty` to the pty require list (was only `node-pty-prebuilt`
+  / `pty.js`, both ancient and unbuildable on Node 24). Same `.spawn` API, so no other changes.
+- **Verified in the Linux image:** node-pty 1.1.0 compiles, the "unable to initialize pty.js"
+  warning is gone, and `pty.spawn("bash", …)` runs a command and returns its output. tmux 3.3a
+  present (c9 wraps it). Final browser check: open a Terminal pane in the IDE and type a command.
+
 ## Known gaps / next
-- **Terminal:** `unable to initialize pty.js` — `node-pty` isn't installed in the image. tmux IS.
-  Next: add `node-pty` (build tools already present) and wire it, or confirm the bundled pty path.
 - **Tier 2 (staged):** send (`.root()`→options), async 0.9→3, optimist→yargs, ejs 1→3,
   mocha/chai, root `ws`→8 (the netproxy helper only), less 2→4 (fixes the skin 500), and the
   git-dep / committed-`node_modules` supply-chain restructure so `npm ci`/`npm audit` work.

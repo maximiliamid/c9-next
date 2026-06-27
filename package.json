@@ -33,6 +33,7 @@
         "msgpack-js-browser": "~0.1.4",
         "nak": "git+https://github.com/cloud9ide/nak.git#6deef931594",
         "netutil": "~0.0.2",
+        "node-pty": "^1.1.0",
         "optimist": "~0.6.0",
         "qs": "^6.13.0",
         "rusha": "0.8.14",
